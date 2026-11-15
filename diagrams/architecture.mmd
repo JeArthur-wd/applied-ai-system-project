@@ -1,0 +1,43 @@
+flowchart TD
+    Listener[Listener<br/>describes request or sets profile]
+    UI[Streamlit UI<br/>app.py]
+    InputCheck[Input and profile guardrails<br/>src/guardrails.py]
+    Agent[Recommender agent<br/>src/agent.py]
+    Retriever[RAG retriever<br/>src/rag.py]
+    Knowledge[(Music knowledge base<br/>data/knowledge_base.json)]
+    Planner[Profile planner<br/>src/llm.py or offline rules]
+    Catalog[(Song catalog<br/>data/songs.csv)]
+    Ranker[Scoring and ranking<br/>src/recommender.py]
+    OutputCheck[Recommendation output checks<br/>src/guardrails.py]
+    Results[Ranked songs with explanations<br/>and retrieved source notes]
+    HumanReview[Listener reviews results<br/>and changes request or profile]
+
+    Eval[Reliability evaluator<br/>src/evaluate.py]
+    Tests[Automated test suite<br/>tests/]
+    Logs[(Redacted activity logs<br/>logs/tunejudge.log)]
+
+    Listener -->|request or preferences| UI
+    UI --> InputCheck
+    InputCheck -->|free-text request| Agent
+    InputCheck -->|validated profile| Ranker
+    Agent -->|search request| Retriever
+    Knowledge --> Retriever
+    Retriever -->|relevant notes| Planner
+    Agent -->|request plus context| Planner
+    Planner -->|structured listener profile| InputCheck
+    Ranker -->|ranked candidates| Agent
+    Agent -->|self-check; revise plan when needed| Ranker
+    Agent --> OutputCheck
+    Ranker --> OutputCheck
+    OutputCheck -->|safe, validated results| Results
+    Results --> UI
+    UI --> Listener
+    Listener -->|feedback or updated request| UI
+
+    Eval -->|golden cases, consistency, robustness| Agent
+    Eval -->|profile and output checks| Ranker
+    Tests -->|unit and integration checks| Agent
+    Tests -->|unit and integration checks| Retriever
+    Tests -->|guardrail and ranking checks| Ranker
+    Agent -.-> Logs
+    Eval -.-> Logs
