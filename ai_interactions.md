@@ -1,6 +1,6 @@
 # AI Interactions Log
 
-> **Stretch features only.** Only fill in the sections that apply to stretch features you attempted. If you did not attempt a stretch feature, leave its section blank or delete it. This file is not required for the core project.
+> This file records AI-assisted design work and committed traces for the optional stretch features.
 
 ---
 
@@ -72,3 +72,29 @@ I chose option 2. It keeps all the scoring rules in one place, a new mode is a o
 | Genre-First (default) | 2.0 | 1.0 | 1.5 | The original recipe |
 | Mood-First | 1.0 | 2.0 | 1.5 | Listeners who care about feeling over style |
 | Energy-Focused | 1.0 | 0.5 | 3.0 | Workout or study sessions where intensity matters most |
+
+---
+
+## TuneJudge Agent Trace (Project 4)
+
+This is an actual offline run from `src.agent.RecommenderAgent` with `use_llm=False`. The trace records observable workflow decisions, not hidden model reasoning. The retrieved note changes how the request is handled: punk is absent from the song catalog, so the profile planner uses the related rock genre from the knowledge base.
+
+**Input:** `punk please`
+
+**Run result:** status `ok`; planner `rules`; confidence `1.00`.
+
+```text
+guard_input: passed
+retrieve: Punk (not in catalog) (6.99)
+plan: rule-based planner from 1 retrieved docs
+validate: profile is valid
+recommend: attempt 1: top = Storm Runner (5.48), Gym Hero (2.46), Pulse Reactor (1.93); confidence 1.00
+self_check: no fixable issues found
+guard_output: passed
+```
+
+**Planned profile:** rock / intense, energy 0.90, tags `aggressive` and `driving`.
+
+**Retrieved source:** `Punk (not in catalog)`.
+
+**Top results:** Storm Runner (5.48), Gym Hero (2.46), Pulse Reactor (1.93).
