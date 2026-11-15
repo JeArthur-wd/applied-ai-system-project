@@ -417,6 +417,10 @@ Further ideas: let users list several favorite genres, grow the catalog so each 
 
 ## 9. Personal Reflection  
 
+**Responsible AI collaboration:** For the ranking-mode design, the AI suggested either a separate scorer class for each mode or one shared scoring function with a small dataclass of weights. I accepted the shared function and weight objects because the modes use the same scoring rules and differ only in priority; that choice reduced duplicated logic and kept the behavior easier to compare. I rejected the separate-class suggestion for this version because it would repeat nearly identical scoring code. I also treated AI-generated song metadata as synthetic assumptions rather than evidence, and checked generated claims and rankings against the actual data and evaluation results.
+
+**Limitations to keep in view:** This system uses a tiny, hand-curated catalog and invented song features, so it can reproduce the assumptions encoded in those labels. The keyword planner can misread nuanced requests, and its confidence score only measures how well the catalog matches the parsed profile. The optional Claude path has mock-based tests but is not covered by the offline reliability score; recommendations should be treated as suggestions for a listener to review, not objective judgments about music.
+
 **Biggest learning moment:** realizing that recommending is just two steps: score every song, then sort. Before this project, I imagined recommenders "knowing" what I like. In TuneJudge, a single score like 3.30 means nothing on its own. It only becomes a recommendation once it's compared with every other song in the catalog. Splitting the work into a scoring rule (one song) and a ranking rule (the whole list) made the system much easier to understand, test and change.
 
 **How AI tools helped, and when I double-checked them:** AI helped me analyze the dataset, compare weighting strategies with real numbers, write the code, and come up with edge-case profiles I wouldn't have thought of. But I had to check its work in three places:
@@ -443,7 +447,7 @@ Version 1.1 adds a natural-language front end. Full details and commands are in 
 - **Guardrails.** Input (empty, too long, prompt injection, off-limits), profile (normalize, clamp, drop unknown keys, warn about missing genres and moods), output (real songs, no duplicates, sorted, explained) and data (bad CSV rows skipped). This fixes the Messy Input and Energy Overload bugs from §7, and closes Future Work item 1 (§8).
 - **Logging.** A rotating log file with one structured JSON event per agent run, and emails, phone numbers and keys redacted.
 
-**Evaluation:** `python -m src.evaluate` runs 158 checks: 22 golden natural-language requests, determinism, perturbation robustness, 200 fuzzed profiles, and every preset × mode × diversity combination. All 158 pass, with an average confidence of 0.93 on the golden requests. Writing the harness exposed two real bugs, an infinite decade that crashed the guardrail and "fall asleep" retrieving study music, and both were fixed. The suite has 69 tests in total.
+**Evaluation:** The latest run of `python -m src.evaluate` passed 170 checks: 24 golden natural-language requests, determinism, perturbation robustness, 200 fuzzed profiles, and every preset × mode × diversity combination. Average confidence was 0.93 on golden requests. Writing the harness exposed two real bugs, an infinite decade that crashed the guardrail and "fall asleep" retrieving study music, and both were fixed. The automated test suite contains 71 tests; the latest run passed all 71.
 
 **New limitations and risks:**
 - **Misreading the request.** The rule-based planner works on keywords. It handles simple negation and explicit numbers, but misses comparisons ("like X but sadder"), sarcasm and artist names. Every answer prints how the request was read ("I read this as: …") so the user can spot a misreading.
@@ -451,3 +455,23 @@ Version 1.1 adds a natural-language front end. Full details and commands are in 
 - **Confidence is narrow.** It measures how well the catalog fits the parsed profile, not whether the profile captured what the person meant.
 - **The LLM path is not measured.** The reliability numbers are for the offline planner. The Claude planner is unit-tested with mocks only.
 - **Misuse.** Prompt-injection filtering is pattern-based and can be bypassed with rewording. The impact is limited, because the LLM can only output enum-constrained profile fields that are re-validated, and it has no tools or private data to leak.
+
+---
+
+## 11. Reflection and Ethics
+
+### Limitations and biases
+
+The catalog contains only 20 hand-curated songs, and many of their features were invented with AI assistance rather than measured from audio. Exact genre and mood labels, scoring weights, and the 36 hand-written retrieval notes encode assumptions about which music fits an activity or feeling; this can over-recommend well-represented styles and misrepresent listeners whose tastes do not match those assumptions. The rule planner can also misread nuanced language, and confidence measures catalog fit to its parsed profile rather than whether it understood the person.
+
+### Misuse and safeguards
+
+Someone could try prompt injection, submit abusive or sensitive text, or over-trust a recommendation that misread their intent. Input guardrails block common injection patterns, off-limits requests, empty input, and oversized requests; profile and output checks restrict the planner to valid catalog preferences and recommendations. The optional LLM has no tools or private data access, and logs redact common personal identifiers and key-like strings. These safeguards reduce risk but do not eliminate it: pattern-based filtering can be bypassed, so users should avoid entering sensitive personal information and review the displayed interpretation and sources.
+
+### What surprised me in reliability testing
+
+The reliability harness found failures that normal examples did not expose: an infinite preferred decade crashed profile validation, a sleep request retrieved study music, and tabs/newlines could merge words during normalization. Fixing those cases and adding regression coverage showed me that a recommendation can look plausible while the system has parsed the request incorrectly. The latest offline run passes 71 automated tests and 170 evaluator checks, but those results do not measure the optional Claude path or prove that the hand-written catalog reflects real listeners.
+
+### Collaboration with AI
+
+For scoring modes, the AI proposed one scorer class per mode or a shared scoring function configured with mode weights. I accepted the shared function and weight objects because the modes use the same rules, which kept the scoring logic consistent and easier to compare. I did not accept the separate-class design as written: it would duplicate nearly identical code for this project. I also checked AI-generated song attributes and claims against the dataset and evaluator rather than treating generated values as facts.
