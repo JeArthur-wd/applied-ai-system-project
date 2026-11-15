@@ -1,21 +1,18 @@
-# 🎵 Music Recommender Simulation
+# 🎵 TuneJudge — Music Recommender Simulation
 
 ## Project Summary
 
-In this project you will build and explain a small music recommender system.
+**Original project (Modules 1–3): Music Recommender Simulation.** The original project represents a small song catalog and listener taste profiles as structured data, then ranks tracks with an explainable content-based scoring rule. It compares scoring choices and evaluates where the recommendations fit or miss a listener's preferences.
 
-Your goal is to:
-
-- Represent songs and a user "taste profile" as data
-- Design a scoring rule that turns that data into recommendations
-- Evaluate what your system gets right and wrong
-- Reflect on how this mirrors real world AI recommenders
-
-Replace this paragraph with your own summary of what your version does.
+TuneJudge extends that project with a natural-language recommendation agent. It retrieves relevant music notes before interpreting a request, turns the request into a validated profile, ranks catalog songs, and checks the results before showing recommendations with explanations and their grounding sources. This makes the project useful as a transparent music discovery demo while illustrating how retrieval and bounded agent workflows can improve a rule-based system.
 
 ---
 
 ## How The System Works
+
+### Architecture overview
+
+The [Mermaid architecture source](diagrams/architecture.mmd) shows the full flow. A listener's request passes through input guardrails, retrieval, profile planning, song ranking, and output validation; the agent can revise its plan after checking its first ranking. The listener reviews the recommendations, while `src/evaluate.py` and `tests/` check expected behavior, consistency, robustness, and invalid inputs.
 
 Real-world platforms like Spotify and YouTube combine two main approaches. **Collaborative filtering** learns from millions of users' behavior (likes, skips, replays, playlist adds, watch time) and recommends what similar listeners enjoyed, even when the songs sound nothing alike. **Content-based filtering** compares the attributes of the songs themselves (genre, mood, tempo, energy, audio features) to what a user already likes, which lets brand-new songs be recommended before anyone has played them. At scale, these systems run in stages: they generate a few hundred candidates from huge catalogs, rank them with machine-learning models that predict engagement, then re-rank for diversity and freshness. My version is a small **content-based** recommender. It has no other users' data, so it scores each song by how well its attributes match a single user's stated taste. It gives genre the most weight, then **closeness** to the user's target energy (not just "higher is better"), then mood. Every recommendation comes with a plain-language reason.
 
@@ -94,18 +91,19 @@ The energy term rewards songs *near* the target. A song exactly at the target ea
 
 ### Setup
 
-1. Create a virtual environment (optional but recommended):
+1. Create and activate a virtual environment with `uv`:
 
    ```bash
-   python -m venv .venv
-   source .venv/bin/activate      # Mac or Linux
-   .venv\Scripts\activate         # Windows
+   uv venv .venv
+   source .venv/bin/activate       # Mac or Linux
+   .venv\Scripts\Activate.ps1      # Windows PowerShell
+   ```
 
-2. Install dependencies
+2. Install the project dependencies into that environment:
 
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   uv pip install --python .venv -r requirements.txt
+   ```
 
 3. Run the app:
 
@@ -132,9 +130,11 @@ python -m src.evaluate                               # reliability report (exit 
 streamlit run app.py
 ```
 
+The Mermaid architecture source is in [`diagrams/architecture.mmd`](diagrams/architecture.mmd). The `assets/` directory is reserved for exported architecture images.
+
 ### Running Tests
 
-Run the full suite (69 tests, about 3 seconds, fully offline) with:
+Run the full suite (71 tests, about 2 seconds, fully offline) with:
 
 ```bash
 pytest
@@ -153,6 +153,33 @@ pytest
 ---
 
 ## Sample Recommendation Output
+
+### Sample AI interactions
+
+These examples use the offline planner, so they work without an API key. The outputs below are from the integrated agent and include the retrieved notes that influenced the listener profile.
+
+**Input:** `something calm for studying on a rainy day`
+
+**AI output:** Interpreted as lofi / chill, energy 0.25, acoustic, with calm/rainy/cozy tags. Retrieved *Rainy days*, *Studying and focus*, *Lo-fi hip hop*, and *Chill and relaxed*. Top results: **Library Rain** (lofi/chill, 5.85), **Midnight Coding** (lofi/chill, 4.25), and **Spacewalk Thoughts** (ambient/chill, 2.96).
+
+**Input:** `punk please`
+
+**AI output:** The catalog has no punk track, so the retrieved *Punk (not in catalog)* note maps the request to related rock. The agent recommends **Storm Runner** (rock/intense, 5.48), followed by **Gym Hero** (pop/intense, 2.46) and **Pulse Reactor** (EDM/energetic, 1.93), with the source note shown in the response.
+
+**Input:** `jazz for a dinner date`
+
+**AI output:** Interpreted as jazz / romantic, energy 0.37, with romantic/smooth/warm tags. Retrieved *Dinner and date night*, *Jazz*, *R&B*, and *Rainy days*. Top results: **Coffee Shop Stories** (jazz/relaxed, 4.00), **Velvet Hours** (R&B/romantic, 3.33), and **Dirt Road Summer** (country/nostalgic, 1.69).
+
+### Design decisions and trade-offs
+
+- **Content-based ranking** keeps recommendations explainable and works without historical user data, but it cannot learn from what similar listeners enjoy and is limited by the small hand-curated catalog.
+- **BM25 retrieval plus structured hints** grounds ambiguous requests in local music notes without requiring a vector database or network connection. The hand-written knowledge base can still miss unfamiliar wording or encode the author's assumptions.
+- **A bounded agent and deterministic offline planner** make the workflow reproducible and prevent open-ended retries. The rule planner is less flexible with nuanced language than an LLM; the optional Claude planner adds that capability but requires a key and is not the basis for the offline reliability results.
+- **Visible scores, sources, and guardrails** make results easier to inspect and correct, though a plausible score or confidence value does not guarantee that the system understood a person's intent.
+
+### Testing summary
+
+The current offline run passes **71/71 automated tests** and **170/170 reliability checks** across expected requests, consistency, input robustness, profile repair, and recommendation output validation. The evaluator reports average confidence **0.93** on its golden requests. It previously exposed issues with invalid decade values, sleep-related retrieval, and whitespace handling; those were fixed and regression coverage was added. Automated tests and the reliability harness exercise the local planner, while the optional Claude planner is tested with mocks and has not been measured by the offline reliability score. Run `pytest` and `python -m src.evaluate` to reproduce the checks.
 
 Output of `python -m src.main` (default: Genre-First mode, table view) for the two main profiles. Run `python -m src.main --profile "High-Energy Pop"` to see a single profile, or add `--format detailed` for the list layout.
 
@@ -366,6 +393,8 @@ The retrieved documents decide what an ambiguous request means. Explicit words i
 - *"punk please"*: there are no punk songs. The **Punk (not in catalog)** doc points to its related catalog genres, so the agent recommends rock and says why.
 - *"jazz for a dinner date"*: "jazz" comes from the request, while mood (romantic) and tags (smooth, warm) come from **Dinner and date night**.
 
+**Retrieval impact:** without the custom *Punk (not in catalog)* note, the request contains no genre that exists in the catalog, so the system has no grounded mapping to recommend from. With the note retrieved, the planner maps punk to related rock, validates that profile, and recommends *Storm Runner* (rock/intense) first. The committed step-by-step run is in [`ai_interactions.md`](ai_interactions.md).
+
 Every answer lists its sources (`Grounded in: …`). With Claude enabled, the retrieved text is passed as context, and the output schema restricts genre, mood and tags to values that exist in the catalog.
 
 ### Agentic self-check
@@ -417,16 +446,16 @@ The profile guardrail fixes the two bugs found during the original evaluation. *
 
 ### Reliability testing
 
-`python -m src.evaluate` runs 158 checks in about 1 second and exits non-zero on any failure (`--json PATH` saves a report, `-v` shows passing checks):
+`python -m src.evaluate` runs 170 checks in about 2 seconds and exits non-zero on any failure (`--json PATH` saves a report, `-v` shows passing checks):
 
 | Suite | What it checks | Result |
 |---|---|---|
-| golden | 22 requests with expected status, genre, mood, energy range, titles in top 3, excluded genres (16 normal, 6 that must be blocked or clarified) | 22/22 |
-| consistency | Each request run 3 times gives byte-identical rankings | 15/15 |
-| robustness | Uppercase, extra whitespace, `!!!`, and "please give me … thanks" don't change the top 3 | 60/60 |
+| golden | 24 requests with expected status, genre, mood, energy range, titles in top 3, excluded genres | 24/24 |
+| consistency | Each valid request run 3 times gives byte-identical rankings | 17/17 |
+| robustness | Uppercase, extra whitespace, `!!!`, and "please give me … thanks" don't change the top 3 | 68/68 |
 | guardrails | 200 randomly corrupted profiles (NaN, inf, lists, wrong types, junk keys) always repaired into valid, non-negative rankings in every mode | 1/1 |
 | output | All 10 presets × 3 modes × diversity on/off pass the output guardrail | 60/60 |
-| **Total** | | **158/158 (100%)**, avg. confidence 0.93 |
+| **Total** | | **170/170 (100%)**, avg. confidence 0.93 |
 
 The harness earned its place on its first run. It found two real bugs: `preferred_decade=inf` crashed the profile guardrail (`OverflowError`), and "fall asleep" retrieved study music because "asleep" didn't match the sleep doc. A unit test then caught a third: tabs and newlines were deleted rather than turned into spaces ("CALM\tfor" → "CALMfor"). All three are fixed.
 
@@ -466,28 +495,17 @@ The harness earned its place on its first run. It found two real bugs: `preferre
 
 ## Limitations and Risks
 
-Summarize some limitations of your recommender.
+- The catalog has only 20 hand-curated tracks, so many genres have very few candidates and recommendations can become repetitive.
+- Songs are matched by metadata rather than audio or lyrics. The system cannot verify whether a track really sounds calm, romantic, or energetic.
+- The rule planner handles common keywords, explicit preferences, and simple negation, but can miss sarcasm, comparisons, artist names, or unfamiliar phrasing.
+- The knowledge-base hints, song metadata, and scoring weights reflect human choices. Exact genre and mood matches can also favor familiar categories over less represented ones.
+- Confidence measures catalog fit to the parsed profile; it does not measure whether the profile reflects the listener's actual intent.
 
-Examples:
-
-- It only works on a tiny catalog
-- It does not understand lyrics or language
-- It might over favor one genre or mood
-
-You will go deeper on this in your model card.
+See [model_card.md](model_card.md) for the responsible-AI reflection, including AI collaboration choices and a fuller limitations discussion.
 
 ---
 
 ## Reflection
 
-Read and complete `model_card.md`:
-
-[**Model Card**](model_card.md)
-
-Write 1 to 2 paragraphs here about what you learned:
-
-- about how recommenders turn data into predictions
-- about where bias or unfairness could show up in systems like this
-
-
+Building TuneJudge showed me how much a recommendation depends on the representation and scoring choices behind it: changing the catalog, feature weights, or language interpretation can change the ranking even when the code runs correctly. Retrieval and result checks made the agent more inspectable, but they did not remove uncertainty; useful AI systems need clear explanations, measurable checks, and a way for people to correct the result.
 
