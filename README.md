@@ -158,17 +158,38 @@ pytest
 
 These examples use the offline planner, so they work without an API key. The outputs below are from the integrated agent and include the retrieved notes that influenced the listener profile.
 
-**Input:** `something calm for studying on a rainy day`
+```text
+Input: something calm for studying on a rainy day
+Planner: rules
+Profile: lofi / chill, energy 0.25, acoustic; tags calm, rainy, cozy
+Retrieved: Rainy days; Studying and focus; Lo-fi hip hop; Chill and relaxed
+Recommendations:
+1. Library Rain (lofi / chill) — 5.85
+2. Midnight Coding (lofi / chill) — 4.25
+3. Spacewalk Thoughts (ambient / chill) — 2.96
+```
 
-**AI output:** Interpreted as lofi / chill, energy 0.25, acoustic, with calm/rainy/cozy tags. Retrieved *Rainy days*, *Studying and focus*, *Lo-fi hip hop*, and *Chill and relaxed*. Top results: **Library Rain** (lofi/chill, 5.85), **Midnight Coding** (lofi/chill, 4.25), and **Spacewalk Thoughts** (ambient/chill, 2.96).
+```text
+Input: punk please
+Planner: rules
+Profile: rock / intense, energy 0.90; tags aggressive, driving
+Retrieved: Punk (not in catalog)
+Recommendations:
+1. Storm Runner (rock / intense) — 5.48
+2. Gym Hero (pop / intense) — 2.46
+3. Pulse Reactor (EDM / energetic) — 1.93
+```
 
-**Input:** `punk please`
-
-**AI output:** The catalog has no punk track, so the retrieved *Punk (not in catalog)* note maps the request to related rock. The agent recommends **Storm Runner** (rock/intense, 5.48), followed by **Gym Hero** (pop/intense, 2.46) and **Pulse Reactor** (EDM/energetic, 1.93), with the source note shown in the response.
-
-**Input:** `jazz for a dinner date`
-
-**AI output:** Interpreted as jazz / romantic, energy 0.37, with romantic/smooth/warm tags. Retrieved *Dinner and date night*, *Jazz*, *R&B*, and *Rainy days*. Top results: **Coffee Shop Stories** (jazz/relaxed, 4.00), **Velvet Hours** (R&B/romantic, 3.33), and **Dirt Road Summer** (country/nostalgic, 1.69).
+```text
+Input: jazz for a dinner date
+Planner: rules
+Profile: jazz / romantic, energy 0.37; tags romantic, smooth, warm
+Retrieved: Dinner and date night; Jazz; R&B; Rainy days
+Recommendations:
+1. Coffee Shop Stories (jazz / relaxed) — 4.00
+2. Velvet Hours (R&B / romantic) — 3.33
+3. Dirt Road Summer (country / nostalgic) — 1.69
+```
 
 ### Design decisions and trade-offs
 
