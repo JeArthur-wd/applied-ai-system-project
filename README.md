@@ -2,6 +2,8 @@
 
 ## Project Summary
 
+**Portfolio:** [Source code on GitHub](https://github.com/JeArthur-wd/applied-ai-system-project) · [6-minute presentation](presentation.md)
+
 **Original project (Modules 1–3): Music Recommender Simulation.** The original project represents a small song catalog and listener taste profiles as structured data, then ranks tracks with an explainable content-based scoring rule. It compares scoring choices and evaluates where the recommendations fit or miss a listener's preferences.
 
 TuneJudge extends that project with a natural-language recommendation agent. It retrieves relevant music notes before interpreting a request, turns the request into a validated profile, ranks catalog songs, and checks the results before showing recommendations with explanations and their grounding sources. This makes the project useful as a transparent music discovery demo while illustrating how retrieval and bounded agent workflows can improve a rule-based system.
@@ -529,4 +531,6 @@ See [model_card.md](model_card.md) for the responsible-AI reflection, including 
 ## Reflection
 
 Building TuneJudge showed me how much a recommendation depends on the representation and scoring choices behind it: changing the catalog, feature weights, or language interpretation can change the ranking even when the code runs correctly. Retrieval and result checks made the agent more inspectable, but they did not remove uncertainty; useful AI systems need clear explanations, measurable checks, and a way for people to correct the result.
+
+**Portfolio reflection:** This project shows my approach to AI engineering: I make AI workflows inspectable, constrain them with clear guardrails, and test them against both expected and adversarial inputs. I learned that a plausible answer is not enough; a useful system also needs traceable evidence, reproducible behavior, and honest limits. I want to keep building AI systems that people can understand, evaluate, and correct.
 
