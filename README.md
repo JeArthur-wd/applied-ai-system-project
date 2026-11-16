@@ -2,7 +2,7 @@
 
 ## Project Summary
 
-**Portfolio:** [Source code on GitHub](https://github.com/JeArthur-wd/applied-ai-system-project) · [6-minute presentation](presentation.md)
+**Portfolio:** [Source code on GitHub](https://github.com/JeArthur-wd/applied-ai-system-project)
 
 **Original project (Modules 1–3): Music Recommender Simulation.** The original project represents a small song catalog and listener taste profiles as structured data, then ranks tracks with an explainable content-based scoring rule. It compares scoring choices and evaluates where the recommendations fit or miss a listener's preferences.
 
